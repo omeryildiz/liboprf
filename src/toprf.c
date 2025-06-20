@@ -51,7 +51,7 @@ typedef struct {
   uint8_t value[crypto_core_ristretto255_BYTES];
 } __attribute((packed)) TOPRF_Part;
 
-void lcoeff(const uint8_t index, const uint8_t x, const size_t degree, const uint8_t peers[degree], uint8_t result[crypto_scalarmult_ristretto255_SCALARBYTES]) {
+void lcoeff(const uint8_t index, const uint8_t x, const size_t degree, const uint8_t *peers, uint8_t result[crypto_scalarmult_ristretto255_SCALARBYTES]) {
   uint8_t xscalar[crypto_scalarmult_ristretto255_SCALARBYTES]={0};
   xscalar[0]=x;
 
@@ -82,7 +82,7 @@ void lcoeff(const uint8_t index, const uint8_t x, const size_t degree, const uin
 }
 
 // interpolates a polynomial of degree t at point x: y = f(x), given t shares of the polynomial
-void interpolate(const uint8_t x, const uint8_t t, const TOPRF_Share shares[t], uint8_t y[crypto_scalarmult_ristretto255_SCALARBYTES]) {
+void interpolate(const uint8_t x, const uint8_t t, const TOPRF_Share *shares, uint8_t y[crypto_scalarmult_ristretto255_SCALARBYTES]) {
   memset(y,0,crypto_scalarmult_ristretto255_SCALARBYTES);
   uint8_t l[crypto_scalarmult_ristretto255_SCALARBYTES];
 
@@ -103,14 +103,14 @@ void interpolate(const uint8_t x, const uint8_t t, const TOPRF_Share shares[t], 
   }
 }
 
-void coeff(const uint8_t index, const size_t peers_len, const uint8_t peers[peers_len], uint8_t result[crypto_scalarmult_ristretto255_SCALARBYTES]) {
+void coeff(const uint8_t index, const size_t peers_len, const uint8_t *peers, uint8_t result[crypto_scalarmult_ristretto255_SCALARBYTES]) {
   lcoeff(index,0,peers_len,peers,result);
 }
 
 void toprf_create_shares(const uint8_t secret[crypto_core_ristretto255_SCALARBYTES],
                    const uint8_t n,
                    const uint8_t threshold,
-                   uint8_t _shares[n][TOPRF_Share_BYTES]) {
+                   uint8_t *_shares[TOPRF_Share_BYTES]) {
   TOPRF_Share *shares= (TOPRF_Share*)_shares;
 
   uint8_t a[threshold-1][crypto_core_ristretto255_SCALARBYTES];
@@ -144,7 +144,7 @@ void toprf_create_shares(const uint8_t secret[crypto_core_ristretto255_SCALARBYT
   }
 }
 
-static void sort_parts(const int n, const TOPRF_Part parts[n], uint8_t indexes[n]) {
+static void sort_parts(const int n, const TOPRF_Part *parts, uint8_t *indexes) {
   uint8_t arr[n];
   for(uint8_t i=0;i<n;i++) {
     arr[i]=parts[i].index;
@@ -166,7 +166,7 @@ static void sort_parts(const int n, const TOPRF_Part parts[n], uint8_t indexes[n
 }
 
 int toprf_thresholdmult(const size_t response_len,
-                        const uint8_t _responses[response_len][TOPRF_Part_BYTES],
+                        const uint8_t *_responses[TOPRF_Part_BYTES],
                         uint8_t result[crypto_scalarmult_ristretto255_BYTES]) {
   const TOPRF_Part *responses=(TOPRF_Part*) _responses;
   uint8_t lpoly[crypto_scalarmult_ristretto255_SCALARBYTES];
@@ -178,7 +178,7 @@ int toprf_thresholdmult(const size_t response_len,
   if(response_len>255) return 1;
   sort_parts((uint8_t) response_len, (TOPRF_Part*) responses, indexed_indexes);
 
-  uint8_t indexes[response_len];
+  uint8_t *indexes;
   for(size_t i=0;i<response_len;i++) {
     indexes[indexed_indexes[i]]=responses[indexed_indexes[i]].index;
   }
@@ -194,10 +194,10 @@ int toprf_thresholdmult(const size_t response_len,
   return 0;
 }
 
-int toprf_Evaluate(const uint8_t _k[TOPRF_Share_BYTES],
+int toprf_Evaluate(const uint8_t *_k,
                    const uint8_t blinded[crypto_core_ristretto255_BYTES],
                    const uint8_t self, const uint8_t *indexes, const uint16_t index_len,
-                   uint8_t _Z[TOPRF_Part_BYTES]) {
+                   uint8_t *_Z) {
   uint8_t lpoly[crypto_scalarmult_ristretto255_SCALARBYTES];
   coeff(self, index_len, indexes, lpoly);
   // kl = k * lpoly
@@ -213,7 +213,7 @@ int toprf_Evaluate(const uint8_t _k[TOPRF_Share_BYTES],
 }
 
 int toprf_thresholdcombine(const size_t response_len,
-                            const uint8_t _responses[response_len][TOPRF_Part_BYTES],
+                            const uint8_t *_responses[TOPRF_Part_BYTES],
                             uint8_t result[crypto_scalarmult_ristretto255_BYTES]) {
   if(response_len>255) return 1;
   const TOPRF_Part *responses=(TOPRF_Part*) _responses;
@@ -229,11 +229,11 @@ int toprf_thresholdcombine(const size_t response_len,
 }
 
 
-int toprf_3hashtdh(const uint8_t _k[TOPRF_Share_BYTES],
-                   const uint8_t _z[TOPRF_Share_BYTES],
+int toprf_3hashtdh(const uint8_t *_k,
+                   const uint8_t *_z,
                    const uint8_t alpha[crypto_core_ristretto255_BYTES],
                    const uint8_t *ssid_S, const uint16_t ssid_S_len,
-                   uint8_t _beta[TOPRF_Part_BYTES]) {
+                   uint8_t *_beta) {
   // essentially calculates the following pythonish value
   //h2 = evaluate(
   //    z[1:],

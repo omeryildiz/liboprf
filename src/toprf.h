@@ -37,7 +37,7 @@ typedef struct {
  * @param [in] shares - evaluated points on the polynomial
  * @param [out] y - the result of f(x)
  */
-void interpolate(const uint8_t x, const uint8_t t, const TOPRF_Share shares[t], uint8_t y[crypto_scalarmult_ristretto255_SCALARBYTES]);
+void interpolate(const uint8_t x, const uint8_t t, const TOPRF_Share *shares, uint8_t y[crypto_scalarmult_ristretto255_SCALARBYTES]);
 
 /**
  * This function calculates a lagrange coefficient for f(x) based on
@@ -55,7 +55,7 @@ void interpolate(const uint8_t x, const uint8_t t, const TOPRF_Share shares[t], 
  * @param [out] result - the lagrange coefficient
  */
 
-void lcoeff(const uint8_t index, const uint8_t x, const size_t degree, const uint8_t peers[degree], uint8_t result[crypto_scalarmult_ristretto255_SCALARBYTES]);
+void lcoeff(const uint8_t index, const uint8_t x, const size_t degree, const uint8_t *peers, uint8_t result[crypto_scalarmult_ristretto255_SCALARBYTES]);
 /**
  * This function calculates a lagrange coefficient for f(0) based on
  * the index and the indexes of the other contributing shareholders.
@@ -69,7 +69,7 @@ void lcoeff(const uint8_t index, const uint8_t x, const size_t degree, const uin
  *
  * @param [out] result - the lagrange coefficient
  */
-void coeff(const uint8_t index, const size_t peers_len, const uint8_t peers[peers_len], uint8_t result[crypto_scalarmult_ristretto255_SCALARBYTES]);
+void coeff(const uint8_t index, const size_t peers_len, const uint8_t *peers, uint8_t result[crypto_scalarmult_ristretto255_SCALARBYTES]);
 
 /**
  * This function creates shares of secret in a (threshold, n) scheme
@@ -92,7 +92,7 @@ void coeff(const uint8_t index, const size_t peers_len, const uint8_t peers[peer
 void toprf_create_shares(const uint8_t secret[crypto_core_ristretto255_SCALARBYTES],
                    const uint8_t n,
                    const uint8_t threshold,
-                   uint8_t shares[n][TOPRF_Share_BYTES]);
+                   uint8_t *shares[TOPRF_Share_BYTES]);
 
 /**
  * This function recovers the secret in the exponent using lagrange interpolation
@@ -112,7 +112,7 @@ void toprf_create_shares(const uint8_t secret[crypto_core_ristretto255_SCALARBYT
  * @return The function returns 0 if everything is correct.
  */
 int toprf_thresholdmult(const size_t response_len,
-                        const uint8_t responses[response_len][TOPRF_Part_BYTES],
+                        const uint8_t *responses[TOPRF_Part_BYTES],
                         uint8_t result[crypto_scalarmult_ristretto255_BYTES]);
 
 /**
@@ -141,10 +141,10 @@ int toprf_thresholdmult(const size_t response_len,
  *
  * @return The function returns 0 if everything is correct.
  */
-int toprf_Evaluate(const uint8_t k[TOPRF_Share_BYTES],
+int toprf_Evaluate(const uint8_t *k,
                    const uint8_t blinded[crypto_core_ristretto255_BYTES],
                    const uint8_t self, const uint8_t *indexes, const uint16_t index_len,
-                   uint8_t Z[TOPRF_Part_BYTES]);
+                   uint8_t *Z);
 
 /**
  * This function is combines the results of the toprf_Evaluate()
@@ -159,7 +159,7 @@ int toprf_Evaluate(const uint8_t k[TOPRF_Share_BYTES],
  * @return The function returns 0 if everything is correct.
  */
 int toprf_thresholdcombine(const size_t response_len,
-                            const uint8_t _responses[response_len][TOPRF_Part_BYTES],
+                            const uint8_t *_responses[TOPRF_Part_BYTES],
                             uint8_t result[crypto_scalarmult_ristretto255_BYTES]);
 
 typedef int (*toprf_evalcb)(void* ctx,
@@ -185,10 +185,10 @@ typedef int (*toprf_keygencb)(void* ctx, uint8_t k[crypto_core_ristretto255_SCAL
     @param [out] beta - the result of the evaluation, to be returned
                  to the client.
  */
-int toprf_3hashtdh(const uint8_t k[TOPRF_Share_BYTES],
-                   const uint8_t z[TOPRF_Share_BYTES],
+int toprf_3hashtdh(const uint8_t *k,
+                   const uint8_t *z,
                    const uint8_t alpha[crypto_core_ristretto255_BYTES],
                    const uint8_t *ssid_S, const uint16_t ssid_S_len,
-                   uint8_t beta[TOPRF_Part_BYTES]);
+                   uint8_t *beta);
 
 #endif // TOPRF_H
